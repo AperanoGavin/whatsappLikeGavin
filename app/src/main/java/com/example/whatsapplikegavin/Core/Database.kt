@@ -6,7 +6,7 @@ import java.sql.SQLException
 
 open class Database {
 
-    private val jdbcUrl = "jdbc:postgresql://46.226.107.16:5432/database_tiw_2023"
+    private val jdbcUrl = "jdbc:postgresql://46.226.105.92:5442/database_tiw_2023"
 
     companion object {
         private var instance: Database? = null
@@ -20,26 +20,28 @@ open class Database {
     }
 
     fun query(query: String, params: List<Any> = emptyList()): PreparedStatement {
-        try {
-            // Open a new connection within a shorter scope
-            DriverManager.getConnection(jdbcUrl, "postgres", "postgres").use { connection ->
-                val statement: PreparedStatement = connection.prepareStatement(query)
+        println("Connecting to database with URL: $jdbcUrl, user: postgres, password: postgres")
 
-                // Set parameters to the prepared statement
-                for ((index, param) in params.withIndex()) {
-                    statement.setObject(index + 1, param)
+        try {
+            // Open a new connection
+            DriverManager.getConnection(jdbcUrl, "postgres", "postgres").use { connection ->
+                // Prepare the query
+                val preparedStatement = connection.prepareStatement(query)
+
+                // Bind the parameters
+                params.forEachIndexed { index, param ->
+                    preparedStatement.setObject(index + 1, param)
                 }
 
                 // Execute the query
-                statement.execute()
+                preparedStatement.execute()
 
-                // Close the statement (it's also closed when the connection is closed)
-                statement.close()
-
-                return statement
+                // Return the result
+                return preparedStatement
             }
         } catch (e: SQLException) {
             // Handle SQL exceptions more specifically
+            e.printStackTrace()
             throw SQLException("Database query error: ${e.message}", e)
         }
     }
